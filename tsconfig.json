@@ -1,7 +1,12 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
+    "jsx": "react",
+    "noEmit": true, // Prevent emitting JavaScript files.
+    "skipLibCheck": true, // Skip type checks for declaration files.
+    "noImplicitAny": false, // Allow implicit `any` types.
+    "strict": false, // Disable strict type-checking options.
+    "allowJs": true, // Allow JavaScript files.
     "paths": {
       "@/*": [
         "./*"
@@ -13,5 +18,8 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+  ],
+  "exclude": ["node_modules"]
 }
+
+
