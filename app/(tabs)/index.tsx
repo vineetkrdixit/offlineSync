@@ -52,8 +52,6 @@ export default function HomeScreen() {
     setAgeInput("");
   };
 
-  console.log(editId,"uiiii")
-
   const handleEdit = (id: number, name: string) => {
     setEditId(id);
     setInput(name);
@@ -80,16 +78,12 @@ export default function HomeScreen() {
       .forEach((item) => {
         let useritem = [];
         item?.forEach((item) => {
-          // console.log(item, "item in last foreach");
           useritem?.push(item?._raw);
         });
         setUserData(useritem);
-        // console.log(item,"-=-=-=")
       });
-    // console.log(userData);
   };
 
-  console.log(userData, "data set ho gya h");
 
   useEffect(() => {
     getuserData();
