@@ -42,7 +42,7 @@ isSyncing = true;
             pullChanges: async ({ lastPulledAt }) => {
                 try {
                     const response = await axios.post(
-                        'http://192.168.1.4:6000/sync',
+                        'http://192.168.1.3:6000/sync',
                         { lastPulledAt }, // Send lastPulledAt as null for the first sync
                         { headers: { 'Content-Type': 'application/json' } }
                     );
@@ -72,7 +72,7 @@ isSyncing = true;
 
                 // Axios call with explicit headers
                 const response = await axios.post(
-                    'http://192.168.1.4:6000/sync',
+                    'http://192.168.1.3:6000/sync',
                     { changes }, // Request body
                     {
                         headers: {
