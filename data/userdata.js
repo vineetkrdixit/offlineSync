@@ -5,7 +5,8 @@ import { field, readonly, date } from '@nozbe/watermelondb/decorators'
 export default class userdata extends Model {
     static table = 'userdata'
     @field("username") username;
-    @readonly @date("created_at") created_at;
+    @readonly @date("createdAt") createdAt;
+    @date("updatedAt") createdAt;
     @field("age") age;
     @field("deleted") deleted;
 }

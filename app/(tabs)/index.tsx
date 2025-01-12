@@ -22,6 +22,26 @@ export default function HomeScreen() {
   const [editId, setEditId] = useState<number | null>(null);
   const [userData, setUserData] = useState([]);
 
+
+  function getFormattedCurrentDate() {
+    const now = new Date();
+    const timezoneOffset = -now.getTimezoneOffset(); // Timezone offset in minutes
+
+    // Format the offset as +HH:mm or -HH:mm
+    const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60);
+    const offsetMinutes = Math.abs(timezoneOffset) % 60;
+    const sign = timezoneOffset >= 0 ? '+' : '-';
+    const formattedOffset = `${sign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+
+    // Combine ISO string with the offset
+    const isoString = now.toISOString(); // 2025-01-07T18:30:37.893Z
+    const formattedDate = isoString.replace('Z', formattedOffset); // 2025-01-07T18:30:37.893+00:00
+
+    return formattedDate;
+}
+
+console.log(getFormattedCurrentDate(),"getFormattedCurrentDate=--=-=-")
+
   const handleAddOrUpdate = async () => {
     if (input.trim() === "") {
       Alert.alert("Validation", "Please enter a valid name.");
@@ -36,6 +56,7 @@ export default function HomeScreen() {
           updateData.update((user) => {
             user.username = input;
             user.age = Number(ageInput);
+            user.updatedAt=getFormattedCurrentDate()
           });
         });
         setEditId(null);
@@ -46,6 +67,7 @@ export default function HomeScreen() {
             user.username = input;
             user.age = Number(ageInput);
             user.deleted = false;
+            user.createdAt= getFormattedCurrentDate()
           });
         });
       }
@@ -73,7 +95,7 @@ export default function HomeScreen() {
   const deleteItem = async (id) => {
     await database.write(async () => {
       const deltedData = await database.get("userdata").find(id);
-      deltedData.destroyPermanently();
+      deltedData.markAsDeleted();
     });
   };
   const getuserData = () => {
@@ -90,6 +112,7 @@ export default function HomeScreen() {
       });
   };
 
+  console.log(userData,"userData")
   const clear=async()=>{
     await database.action(async () => {
       await database.unsafeResetDatabase();  // This will clear the DB

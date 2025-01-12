@@ -2,13 +2,14 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb'
 
 export const mySchema = appSchema({
-    version: 4,
+    version: 5,
     tables: [
         tableSchema({
             name: 'userdata',
             columns: [
                 { name: 'username', type: 'string' },
-                { name: 'created_at', type: 'number' },
+                { name: 'createdAt', type: 'number' },
+                { name: 'updatedAt', type: 'number' },
                 { name: 'age', type: 'number' },
                 { name: 'deleted', type: 'boolean' },
             ]

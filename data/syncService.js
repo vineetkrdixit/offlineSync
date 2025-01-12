@@ -5,7 +5,7 @@ import axios from 'axios';
 
 axios.interceptors.request.use(
     (config) => {
-        console.log('Request Config:', config);
+        // console.log('Request Config:', config);
         return config;
     },
     (error) => {
@@ -16,7 +16,7 @@ axios.interceptors.request.use(
 
 axios.interceptors.response.use(
     (response) => {
-        console.log('Response:', response);
+        // console.log('Response:', response);
         return response;
     },
     (error) => {
@@ -29,16 +29,18 @@ axios.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-let isSyncing =false
+let isSyncing = false
 
 
 export async function syncDatabase() {
     if (isSyncing) return; // Prevent multiple simultaneous executions
-isSyncing = true;
+
+
+    isSyncing = true;
     try {
         await synchronize({
             database: database,
-            // sendCreatedAsUpdated: true,
+            sendCreatedAsUpdated: true,
             pullChanges: async ({ lastPulledAt }) => {
                 try {
                     const response = await axios.post(
@@ -57,7 +59,7 @@ isSyncing = true;
                         throw new Error('Invalid timestamp returned from server');
                     }
 
-                    console.log('Last pulled at:', last_pulled_at,changes?.userdata?.created); // Log for debugging
+                    console.log('Last pulled at:', last_pulled_at, changes?.userdata?.created); // Log for debugging
                     return { changes, timestamp: last_pulled_at };
 
                 } catch (error) {
@@ -84,13 +86,21 @@ isSyncing = true;
                 if (response.status !== 200) {
                     throw new Error('Failed to push changes');
                 }
+                if (response.status >= 200 && response.status <= 205) {
+                    changes?.userdata?.deleted.map(async (deletedId) => {
+                        await database.write(async () => {
+                            const deltedData = await database.get("userdata").find(deletedId);
+                            deltedData.destroyPermanently();
+                        });
+                    })
+                }
             },
         });
 
         console.log('Sync completed successfully');
     } catch (error) {
         console.error('Sync failed:', error);
-    } finally{
+    } finally {
         isSyncing = false;
     }
 }
