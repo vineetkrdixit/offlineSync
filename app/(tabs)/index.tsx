@@ -13,7 +13,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { database } from "../../data/database";
 import React from "react";
-
+import NetInfo from "@react-native-community/netinfo";
+import { syncDatabase } from "../../data/syncService";
 
 export default function HomeScreen() {
   const [input, setInput] = useState("");
@@ -26,37 +27,40 @@ export default function HomeScreen() {
       Alert.alert("Validation", "Please enter a valid name.");
       return;
     }
-    let isAdult;
-    if (ageInput < "18") {
-      isAdult = false;
-    } else {
-      isAdult = true;
+
+    try {
+      if (editId !== null) {
+    
+        await database.write(async () => {
+          const updateData = await database.get("userdata").find(editId);
+          updateData.update((user) => {
+            user.username = input;
+            user.age = Number(ageInput);
+          });
+        });
+        setEditId(null);
+      } else {
+      
+        await database.write(async () => {
+          await database.get("userdata").create((user) => {
+            user.username = input;
+            user.age = Number(ageInput);
+            user.deleted = false;
+          });
+        });
+      }
+    } catch (error) {
+      console.error("Database operation failed:", error);
     }
 
-    if (editId !== null) {
-      await database.write(async () => {
-        const updateData = await database.get("userdata").find(editId);
-        updateData.update((user) => {
-          user.username = input;
-        });
-      });
-      setEditId(null)
-    } else {
-      await database.write(async () => {
-        const newPost = await database.get("userdata").create((user) => {
-          (user.username = input), (user.is_adult = isAdult),(user.sync_status = "pending");
-        });
-      });
-    }
     setInput("");
     setAgeInput("");
   };
 
-  console.log(editId,"uiiii")
-
-  const handleEdit = (id: number, name: string) => {
+  const handleEdit = (id: number, name: string, age: any) => {
     setEditId(id);
     setInput(name);
+    setAgeInput(age?.toString() || "");
   };
 
   const handleDelete = (id: number) => {
@@ -80,22 +84,35 @@ export default function HomeScreen() {
       .forEach((item) => {
         let useritem = [];
         item?.forEach((item) => {
-          // console.log(item, "item in last foreach");
           useritem?.push(item?._raw);
         });
         setUserData(useritem);
-        // console.log(item,"-=-=-=")
       });
-    // console.log(userData);
   };
 
-  console.log(userData, "data set ho gya h");
+  const clear=async()=>{
+    await database.action(async () => {
+      await database.unsafeResetDatabase();  // This will clear the DB
+  });
+  }
 
   useEffect(() => {
     getuserData();
   }, []);
+ useEffect(() => {
+    const unsubscribeNetInfo = NetInfo.addEventListener((state) => {
+      if (state.isConnected) {
+        syncDatabase(); // Sync only if connected
+      } else {
+        console.log('No internet connection. Sync skipped.');
+      }
+    });
+
+    return () => unsubscribeNetInfo(); // Cleanup listener
+  }, []); //
+
   return (
-    <SafeAreaView style={{ flex: 1 ,marginTop:10 }}>
+    <SafeAreaView style={{ flex: 1, marginTop: 10 }}>
       <View style={styles.container}>
         <TextInput
           style={styles.input}
@@ -108,7 +125,7 @@ export default function HomeScreen() {
           placeholder="Enter item Age"
           value={ageInput}
           onChangeText={(e) => setAgeInput(e)}
-          keyboardType="numeric"
+          // keyboardType="numeric"
         />
         <Button
           title={editId !== null ? "Update Item" : "Add Item"}
@@ -121,10 +138,13 @@ export default function HomeScreen() {
             return (
               <View style={styles.itemContainer}>
                 <Text style={styles.itemText}>{item?.username}</Text>
+                <Text style={styles.itemText}>{item?.age}</Text>
                 <View style={styles.buttonsContainer}>
                   <Button
                     title="Edit"
-                    onPress={() => handleEdit(item?.id, item?.username)}
+                    onPress={() =>
+                      handleEdit(item?.id, item?.username, item?.age)
+                    }
                   />
                   <Button
                     title="Delete"
