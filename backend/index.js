@@ -17,12 +17,12 @@ mongoose.connect('mongodb+srv://vineetdixit71:t4h5dM2Mpf40ijb7@clusterofflinesyn
 
 // MongoDB Schema and Model
 const UserSchema = new mongoose.Schema({
+    _id: { type: String, required: true }, // Allow string IDs
     username: { type: String, required: true },
     age: { type: Number, required: true },
     deleted: { type: Boolean, default: false },
-    _id:{ type: String, required: true },
-}, { 
-    timestamps: true, 
+}, {
+    timestamps: true,
     collection: 'userdata' // Explicitly set collection name
 });
 
@@ -83,51 +83,29 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
 
-
-
-
+// Sync Endpoint
 // app.post('/sync', async (req, res) => {
-//     console.log('Request Body:', req.body);
+//     console.log(req.body, "req body",res)
 //     try {
+
 //         // Default to the epoch if lastPulledAt is null
-//         const lastPulledDate = req.body?.lastPulledAt
-//             ? new Date(req.body.lastPulledAt)
-//             : new Date(0); // Default to epoch for the first sync
+//         const lastPulledDate = req.body?.lastPulledAt ? new Date(req.body?.lastPulledAt) : new Date();
 
 //         // Query for records updated since the last pulled date
 //         const pulledUsers = await User.find({ updatedAt: { $gte: lastPulledDate } });
 
-//         // Transform pulled records to match WatermelonDB schema
-//         const transformUser = (user) => ({
-//             id: user._id, // Map `_id` to `id` for WatermelonDB compatibility
-//             username: user.username,
-//             age: user.age,
-//             deleted: user.deleted,
-//             createdAt: user.createdAt,
-//             updatedAt: user.updatedAt,
-//         });
+//         const createdUsers = pulledUsers.filter(user => user.createdAt >= lastPulledDate);
+//         const updatedUsers = pulledUsers.filter(
+//             user => user.updatedAt > lastPulledDate && user.createdAt < lastPulledDate
+//         );
+//         const deletedUsers = pulledUsers.filter(user => user.deleted);
 
-//         const createdUsers = pulledUsers
-//             .filter((user) => user.createdAt >= lastPulledDate)
-//             .map(transformUser);
-
-//             console.log(createdUsers,"createdUsers==-=-=")
-
-//         const updatedUsers = pulledUsers
-//             .filter((user) => user.updatedAt > lastPulledDate && user.createdAt < lastPulledDate)
-//             .map(transformUser);
-
-//         const deletedUsers = pulledUsers
-//             .filter((user) => user.deleted)
-//             .map((user) => user._id);
-
-//         // Send transformed response
 //         res.status(200).json({
 //             changes: {
 //                 userdata: {
 //                     created: createdUsers,
 //                     updated: updatedUsers,
-//                     deleted: deletedUsers,
+//                     deleted: deletedUsers.map(user => user._id),
 //                 },
 //             },
 //             last_pulled_at: Date.now(), // Correctly sending Unix timestamp
@@ -177,17 +155,15 @@ app.post('/sync', async (req, res) => {
                     );
                 }
             }
-
-            // Handle deleted records (soft delete)
+            // Handle deleted records (hard delete)
             if (deleted && deleted.length > 0) {
-                for (const userId of deleted) {
-                    await User.findByIdAndUpdate(userId, { deleted: true }, { new: true });
-                }
+                await User.deleteMany({ _id: { $in: deleted } }); // Permanently remove records from MongoDB
             }
+
         }
 
         // Handle pull changes (fetching data for WatermelonDB)
-        const lastPulledDate = lastPulledAt ? new Date(lastPulledAt) : new Date();
+        const lastPulledDate = lastPulledAt ? new Date(lastPulledAt) : new Date(0);
         const pulledUsers = await User.find({ updatedAt: { $gte: lastPulledDate } });
 
         const transformUser = (user) => ({
@@ -201,8 +177,9 @@ app.post('/sync', async (req, res) => {
 
         const createdUsers = pulledUsers
             .filter((user) => {
-                console.log(user,"user==-=-=")
-                return user.createdAt >= lastPulledDate})
+                console.log(user, "user==-=-=")
+                return user.createdAt >= lastPulledDate
+            })
             .map(transformUser);
 
         const updatedUsers = pulledUsers
@@ -227,6 +204,7 @@ app.post('/sync', async (req, res) => {
         res.status(500).json({ error: 'Failed to sync data.' });
     }
 });
+
 
 
 
