@@ -44,7 +44,7 @@ export async function syncDatabase() {
             pullChanges: async ({ lastPulledAt }) => {
                 try {
                     const response = await axios.post(
-                        'http://192.168.1.3:6000/sync',
+                        'https://offlinebackend.onrender.com/sync',
                         { lastPulledAt }, // Send lastPulledAt as null for the first sync
                         { headers: { 'Content-Type': 'application/json' } }
                     );
@@ -74,7 +74,7 @@ export async function syncDatabase() {
 
                 // Axios call with explicit headers
                 const response = await axios.post(
-                    'http://192.168.1.3:6000/sync',
+                    'https://offlinebackend.onrender.com/sync',
                     { changes }, // Request body
                     {
                         headers: {
